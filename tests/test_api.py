@@ -1,6 +1,9 @@
+from io import BytesIO
 from pathlib import Path
 
+import numpy as np
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from deface import api
 
@@ -79,3 +82,27 @@ def test_rejects_invalid_mosaic_size():
     )
 
     assert response.status_code == 422
+
+
+def test_rgba_png_preserves_transparency(monkeypatch):
+    class Detector:
+        def __call__(self, frame, threshold):
+            return np.array([[4, 4, 20, 20, 0.9]]), None
+
+    monkeypatch.setattr(api, 'get_detector', lambda: Detector())
+    original = np.random.default_rng(0).integers(0, 256, (24, 24, 4), dtype=np.uint8)
+    original[4:20, 4:20, 3] = 255
+    source = BytesIO()
+    Image.fromarray(original).save(source, format='PNG')
+
+    response = client.post(
+        '/anonymize',
+        files={'file': ('screenshot.png', source.getvalue(), 'image/png')},
+        data={'mosaic_size': '5', 'mask_scale': '1'},
+    )
+
+    assert response.status_code == 200
+    assert response.headers['content-type'] == 'image/png'
+    result = np.array(Image.open(BytesIO(response.content)))
+    np.testing.assert_array_equal(result[:, :, 3], original[:, :, 3])
+    assert np.any(result[4:20, 4:20, :3] != original[4:20, 4:20, :3])

@@ -17,6 +17,8 @@ uv run deface-api
 
 OpenAPI documentation is available at <http://localhost:8000/docs>. Upload an image or video with:
 
+For request parameters, response formats, errors, and examples, see the [Chinese API documentation](docs/API.md).
+
 ```bash
 curl -X POST http://localhost:8000/anonymize \
   -F 'file=@examples/city.jpg' \
@@ -25,6 +27,17 @@ curl -X POST http://localhost:8000/anonymize \
 ```
 
 The endpoint accepts JPEG, PNG, BMP, WebP, TIFF, MP4, MOV, AVI, MKV, WebM, and M4V inputs. Videos are returned as MP4. Optional form fields are `threshold` (0-1), `mask_scale` (1-3), `mosaic_size` (2-200), and `keep_audio` (default: `false`). The maximum upload size defaults to 1024 MB and can be changed with `DEFACE_MAX_UPLOAD_MB`.
+
+### Optional Gradio validation page
+
+The FastAPI service is the primary entry point. To start the same API with a local upload, preview, and download page (Python 3.10+):
+
+```bash
+uv sync --group web
+uv run --group web deface-web
+```
+
+Open <http://localhost:8000>. This command replaces `deface-api` while testing; do not run both on port 8000. `/anonymize`, `/health`, and `/docs` remain available. The page calls `/anonymize` in-process through ASGI and provides image/video previews, mosaic settings, processing feedback, and downloads. Generated files are cached for about 24 hours; download results before expiry. Preview support depends on browser codecs. `uv run deface-api` runs the API without loading Gradio.
 
 
 Original frame | `deface` output (using default options)

@@ -63,10 +63,10 @@ def draw_det(
     elif replacewith == 'mosaic':
         for y in range(y1, y2, mosaicsize):
             for x in range(x1, x2, mosaicsize):
-                pt1 = (x, y)
                 pt2 = (min(x2, x + mosaicsize - 1), min(y2, y + mosaicsize - 1))
-                color = (int(frame[y, x][0]), int(frame[y, x][1]), int(frame[y, x][2]))
-                cv2.rectangle(frame, pt1, pt2, color, -1)
+                color = frame[y, x, :3].copy()
+                # Fill RGB only, preserving each pixel's alpha in RGBA images.
+                frame[y:pt2[1] + 1, x:pt2[0] + 1, :3] = color
     elif replacewith == 'none':
         pass
     if draw_scores:
