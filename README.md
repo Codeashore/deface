@@ -6,6 +6,26 @@
 It works by first detecting all human faces in each video frame and then applying an anonymization filter (blurring or black boxes) on each detected face region.
 By default all audio tracks are discarded as well.
 
+## FastAPI service (uv)
+
+Install the locked environment and start the API:
+
+```bash
+uv sync
+uv run deface-api
+```
+
+OpenAPI documentation is available at <http://localhost:8000/docs>. Upload an image or video with:
+
+```bash
+curl -X POST http://localhost:8000/anonymize \
+  -F 'file=@examples/city.jpg' \
+  -F 'mosaic_size=20' \
+  --output city_anonymized.jpg
+```
+
+The endpoint accepts JPEG, PNG, BMP, WebP, TIFF, MP4, MOV, AVI, MKV, WebM, and M4V inputs. Videos are returned as MP4. Optional form fields are `threshold` (0-1), `mask_scale` (1-3), `mosaic_size` (2-200), and `keep_audio` (default: `false`). The maximum upload size defaults to 1024 MB and can be changed with `DEFACE_MAX_UPLOAD_MB`.
+
 
 Original frame | `deface` output (using default options)
 :--:|:--:

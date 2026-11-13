@@ -17,21 +17,31 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
+    "fastapi>=0.115,<1",
     "imageio>=2.25",
     "imageio-ffmpeg>=0.4.6",
     "numpy",
+    "python-multipart>=0.0.18",
     "tqdm",
     "scikit-image",
     "opencv-python",
+    "uvicorn>=0.30,<1",
 ]
 
 [project.optional-dependencies]
-cuda = ["onnx", "onnxruntime-cuda"]
+cuda = ["onnx", "onnxruntime-gpu"]
 directml = ["onnx", "onnxruntime-directml"]
 openvino = ["onnx", "onnxruntime-openvino"]
 
 [project.scripts]
 deface = "deface.deface:main"
+deface-api = "deface.api:run"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1",
+    "pytest>=8,<9",
+]
 
 [tool.setuptools]
 packages = ["deface"]
