@@ -4,6 +4,33 @@ Deface 提供图片和视频人脸遮挡处理接口，支持马赛克、模糊�
 
 ## 启动服务
 
+### 后台运行（推荐）
+
+在项目根目录使用 Bash 脚本管理服务，关闭终端后服务继续运行：
+
+```bash
+# 仅启动 API，默认端口 9000
+bash service.sh start
+
+# 同时开启网页和 API，指定端口
+bash service.sh start --web --port 9000
+
+# 检查运行状态
+bash service.sh status
+
+# 停止服务
+bash service.sh stop
+
+# 查看日志
+tail -f .runtime/service.log
+```
+
+两条启动命令选择其一；修改端口或 Web 模式时，先停止再启动。脚本通过 `uv sync` 安装依赖，再使用 `uv run` 启动服务，并等待 `/health` 检查通过。需要 Linux 环境及 `uv`、`curl`、`flock`、`setsid` 命令。
+
+服务监听 `0.0.0.0`，接口文档为 `http://服务器IP:9000/docs`；添加 `--web` 后可访问 `http://服务器IP:9000/` 使用网页。PID 和日志保存在 `.runtime/`，Gradio 临时目录默认使用 `.runtime/gradio`，也可通过 `GRADIO_TEMP_DIR` 覆盖。`status` 检查进程是否运行，接口是否响应可通过下文 `/health` 检查。此脚本不提供开机自启或进程崩溃后自动重启。
+
+### 前台运行
+
 在项目根目录执行：
 
 ```bash
@@ -65,6 +92,17 @@ curl http://127.0.0.1:8000/health
 | `mask_scale`  | 浮点数 | 否   | `1.3`   | 人脸区域扩展系数，范围`1–3`                                 |
 | `keep_audio`  | 布尔值 | 否   | `false` | 是否尝试保留视频音轨；图片处理时无影响                         |
 
+`replacewith` 对图片和视频均生效，不传时使用马赛克。网页也可通过“处理方式”下拉框选择：
+
+| 参数值 | 处理方式 | 说明 |
+| ------ | -------- | ---- |
+| `mosaic` | 马赛克 | 默认方式，通过 `mosaic_size` 调节块大小 |
+| `blur` | 模糊 | 对人脸区域进行模糊处理，目前不提供模糊强度参数 |
+| `solid` | 黑色遮挡 | 用黑色矩形覆盖人脸区域 |
+| `none` | 不遮挡 | 不修改人脸区域；视频仍会转码，音轨仍由 `keep_audio` 控制 |
+
+其他参数值（包括 `img`）返回 `422`。`mosaic_size` 在非马赛克模式下不影响处理效果，但传入时仍须符合 `2–200` 的范围。
+
 格式通过上传文件名的扩展名识别，扩展名不区分大小写：
 
 | 输入 | 支持的扩展名                                                            | 输出                  |
@@ -91,9 +129,28 @@ curl --fail-with-body -X POST 'http://127.0.0.1:8000/anonymize' \
   --output city_anonymized.jpg
 ```
 
-### 视频调用示例
+### 模糊处理调用示例
 
-切换处理方式时，在请求中添加 `-F 'replacewith=blur'`（模糊）、`-F 'replacewith=solid'`（黑色遮挡）或 `-F 'replacewith=none'`（不遮挡）。网页也可通过“处理方式”下拉框选择；不传此参数时保持马赛克处理。`none` 仅取消人脸遮挡，视频仍会转码，音轨仍由 `keep_audio` 控制。
+通过 `replacewith=blur` 选择模糊处理，无需传入 `mosaic_size`：
+
+```bash
+curl --fail-with-body -X POST 'http://127.0.0.1:8000/anonymize' \
+  -F 'file=@examples/city.jpg' \
+  -F 'replacewith=blur' \
+  --output city_blurred.jpg
+```
+
+视频使用相同参数，例如模糊人脸并保留音轨：
+
+```bash
+curl --fail-with-body -X POST 'http://127.0.0.1:8000/anonymize' \
+  -F 'file=@input.mov' \
+  -F 'replacewith=blur' \
+  -F 'keep_audio=true' \
+  --output input_blurred.mp4
+```
+
+### 视频马赛克调用示例
 
 ```bash
 curl --fail-with-body -X POST 'http://127.0.0.1:8000/anonymize' \
