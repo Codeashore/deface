@@ -15,7 +15,7 @@ uv sync
 uv run deface-api
 ```
 
-OpenAPI documentation is available at <http://localhost:8000/docs>. Upload an image or video with:
+OpenAPI documentation is available at [http://localhost:8000/docs](http://localhost:8000/docs). Upload an image or video with:
 
 For request parameters, response formats, errors, and examples, see the [Chinese API documentation](docs/API.md).
 
@@ -37,13 +37,11 @@ uv sync --group web
 uv run --group web deface-web
 ```
 
-Open <http://localhost:8000>. This command replaces `deface-api` while testing; do not run both on port 8000. `/anonymize`, `/health`, and `/docs` remain available. The page calls `/anonymize` in-process through ASGI and provides image/video previews, mosaic settings, processing feedback, and downloads. Generated files are cached for about 24 hours; download results before expiry. Preview support depends on browser codecs. `uv run deface-api` runs the API without loading Gradio.
+Open [http://localhost:8000](http://localhost:8000). This command replaces `deface-api` while testing; do not run both on port 8000. `/anonymize`, `/health`, and `/docs` remain available. The page calls `/anonymize` in-process through ASGI and provides image/video previews, mosaic settings, processing feedback, and downloads. Generated files are cached for about 24 hours; download results before expiry. Preview support depends on browser codecs. `uv run deface-api` runs the API without loading Gradio.
 
-
-Original frame | `deface` output (using default options)
-:--:|:--:
-![examples/city.jpg](examples/city.jpg) | ![$ deface examples/city.jpg](examples/city_anonymized.jpg)
-
+|             Original frame             |          `deface` output (using default options)          |
+| :-------------------------------------: | :---------------------------------------------------------: |
+| ![examples/city.jpg](examples/city.jpg) | ![$ deface examples/city.jpg](examples/city_anonymized.jpg) |
 
 ## Installation
 
@@ -58,7 +56,6 @@ Alternatively, if you want to use the latest (unreleased) revision directly from
     $ python3 -m pip install 'git+https://github.com/ORB-HD/deface'
 
 This will only install the dependencies that are strictly required for running the tool. If you want to speed up processing by enabling hardware acceleration, you will need to manually install additional packages, see [Hardware acceleration](#hardware-acceleration)
-
 
 ## Usage
 
@@ -175,8 +172,6 @@ Usage example:
 
 <img src="examples/city_anonymized_mosaic.jpg" width="70%" alt="$ deface examples/city.jpg --replacewith mosaic --mosaicsize 20 -o examples/city_anonymized_mosaic.jpg"/>
 
-
-
 ### Tuning detection thresholds
 
 The detection threshold (`--thresh`, `-t`) is used to define how confident the detector needs to be for classifying some region as a face. By default this is set to the value 0.2, which was found to work well on many test videos.
@@ -188,10 +183,9 @@ The optimal value can depend on many factors such as video quality, lighting con
 
 To demonstrate the effects of a threshold that is set too low or too high, see the examples outputs below:
 
-`--thresh 0.02` (notice the false positives, e.g. at hand regions) | `--thresh 0.7` (notice the false negatives, especially at partially occluded faces)
-:--:|:--:
-![examples/city_anonymized_thresh0.02.jpg](examples/city_anonymized_thresh0.02.jpg) | ![$ deface examples/city_anonymized_thresh0.7.jpg](examples/city_anonymized_thresh0.7.jpg)
-
+|        `--thresh 0.02` (notice the false positives, e.g. at hand regions)        |   `--thresh 0.7` (notice the false negatives, especially at partially occluded faces)   |
+| :---------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------: |
+| ![examples/city_anonymized_thresh0.02.jpg](examples/city_anonymized_thresh0.02.jpg) | ![$ deface examples/city_anonymized_thresh0.7.jpg](examples/city_anonymized_thresh0.7.jpg) |
 
 ### Drawing detection score overlays
 
@@ -202,7 +196,6 @@ If you are interested in seeing the faceness score (a score between 0 and 1 that
 <img src="examples/city_anonymized_scores.jpg" width="70%" alt="$ deface examples/city.jpg --draw-scores -o examples/city_anonymized_scores.jpg"/>
 
 This option can be useful to figure out an optimal value for the detection threshold that can then be set through the `--thresh` option.
-
 
 ### High-resolution media and performance issues
 
@@ -215,7 +208,6 @@ It is very important to make sure the aspect ratio of the inputs remains intact 
 
 For example, if your inputs have the common aspect ratio 16:9, you can instruct the detector to run in 360p resolution by specifying `--scale 640x360`.
 If the results at this fairly low resolution are not good enough, detection at 720p input resolution (`--scale 1280x720`) may work better.
-
 
 ## Hardware acceleration
 
@@ -244,11 +236,9 @@ OpenVINO can accelerate inference even on CPU-only systems by a few percent, com
 
     $ python3 -m pip install onnx onnxruntime-openvino
 
-
 ### Other platforms
 
 If you your setup doesn't fit with these recommendations, look into the available options at the [Execution Provider](https://onnxruntime.ai/docs/execution-providers/#summary-of-supported-execution-providers) documentation and find the respective installation instructions in the [ONNX Runtime build matrix](https://microsoft.github.io/onnxruntime/).
-
 
 ## How it works
 
@@ -257,7 +247,6 @@ The network was trained on the [WIDER FACE](http://shuoyang1213.me/WIDERFACE/) d
 
 Although the face detector is originally intended to be used for normal 2D images, `deface` can also use it to detect faces in video data by analyzing each video frame independently.
 The face bounding boxes predicted by the CenterFace detector are then used as masks to determine where to apply anonymization filters.
-
 
 ## Credits
 

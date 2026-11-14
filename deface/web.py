@@ -57,7 +57,7 @@ def create_ui(application):
     with gr.Blocks(title="Deface", fill_width=True, analytics_enabled=False, delete_cache=(3600, 86400)) as demo:
         gr.Markdown(
             "# Deface\n"
-            "图片与视频人脸马赛克 · 上传、处理、预览与下载",
+            "图片与视频人脸遮挡 · 上传、处理、预览与下载",
             elem_id="hero",
         )
         with gr.Row(equal_height=False, elem_id="workspace"):
@@ -77,13 +77,17 @@ def create_ui(application):
                     elem_id="formats",
                 )
                 gr.Markdown("### 02　处理设置")
+                replacewith = gr.Dropdown(
+                    choices=[("马赛克", "mosaic"), ("模糊", "blur"), ("黑色遮挡", "solid"), ("不遮挡", "none")],
+                    value="mosaic", label="处理方式",
+                )
                 mosaic_size = gr.Slider(2, 200, value=20, step=1, label="马赛克块大小", info="数值越大，颗粒越粗。")
                 with gr.Accordion("高级设置", open=False):
                     threshold = gr.Slider(0, 1, value=0.2, step=0.01, label="检测置信度", info="降低可减少漏检，但可能增加误检。")
                     mask_scale = gr.Slider(1, 3, value=1.3, step=0.1, label="人脸覆盖范围", info="增大可覆盖人脸周围区域。")
                     keep_audio = gr.Checkbox(value=False, label="保留视频音轨")
                 with gr.Row(elem_id="actions"):
-                    submit = gr.Button("开始马赛克处理", variant="primary", scale=3)
+                    submit = gr.Button("开始处理", variant="primary", scale=3)
                     clear = gr.Button("清空", variant="secondary", scale=1, min_width=80)
                 with gr.Accordion("原始素材预览", open=False):
                     original_image = gr.Image(label="原始图片", visible=False, interactive=False, height=260)
@@ -93,8 +97,8 @@ def create_ui(application):
                 gr.Markdown("### 03　预览与下载")
                 with gr.Column(elem_id="result-stage"):
                     empty = gr.Markdown("## 等待处理素材\n\n从左侧上传图片或视频，\n\n处理结果将在这里显示。", elem_id="empty-result")
-                    result_image = gr.Image(label="马赛克处理结果", visible=False, interactive=False, height=400)
-                    result_video = gr.Video(label="马赛克处理结果", visible=False, interactive=False, height=400)
+                    result_image = gr.Image(label="处理结果", visible=False, interactive=False, height=400)
+                    result_video = gr.Video(label="处理结果", visible=False, interactive=False, height=400)
                 with gr.Column(elem_id="result-meta"):
                     download = gr.File(label="下载处理后的文件", interactive=False, visible=False)
                     status = gr.Textbox(value="等待上传素材", label="处理状态", interactive=False)
@@ -116,7 +120,7 @@ def create_ui(application):
                 "素材已就绪，点击开始处理" if file else "等待上传素材",
             )
 
-        async def process(file, mosaic_size, threshold, mask_scale, keep_audio, progress=gr.Progress()):
+        async def process(file, mosaic_size, threshold, mask_scale, keep_audio, replacewith="mosaic", progress=gr.Progress()):
             if not file:
                 raise gr.Error("请先上传图片或视频。")
             source = Path(file)
@@ -140,6 +144,7 @@ def create_ui(application):
                                 "threshold": threshold,
                                 "mask_scale": mask_scale,
                                 "keep_audio": keep_audio,
+                                "replacewith": replacewith,
                             },
                         )
                 if response.status_code != 200:
@@ -173,10 +178,13 @@ def create_ui(application):
 
         outputs = [result_image, result_video, download, empty, status]
         upload.change(preview, upload, [original_image, original_video, *outputs], api_name=False)
-        submit.click(process, [upload, mosaic_size, threshold, mask_scale, keep_audio], outputs, api_name=False)
+        replacewith.change(
+            lambda mode: gr.update(visible=mode == "mosaic"), replacewith, mosaic_size, api_name=False,
+        )
+        submit.click(process, [upload, mosaic_size, threshold, mask_scale, keep_audio, replacewith], outputs, api_name=False)
         clear.click(
-            lambda: [None, 20, 0.2, 1.3, False],
-            outputs=[upload, mosaic_size, threshold, mask_scale, keep_audio],
+            lambda: [None, gr.update(value=20, visible=True), 0.2, 1.3, False, "mosaic"],
+            outputs=[upload, mosaic_size, threshold, mask_scale, keep_audio, replacewith],
             api_name=False,
         )
     return demo.queue(default_concurrency_limit=1, max_size=8)

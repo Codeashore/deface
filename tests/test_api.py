@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import Path
 
 import numpy as np
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
@@ -82,6 +83,36 @@ def test_rejects_invalid_mosaic_size():
     )
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("mode", ["mosaic", "blur", "solid", "none"])
+@pytest.mark.parametrize("filename", ["face.jpg", "clip.mp4"])
+def test_anonymize_modes(monkeypatch, mode, filename):
+    calls = []
+
+    def detect(**kwargs):
+        calls.append(kwargs)
+        Path(kwargs["opath"]).write_bytes(b"processed")
+
+    monkeypatch.setattr(api, "get_detector", lambda: object())
+    monkeypatch.setattr(api, "image_detect", detect)
+    monkeypatch.setattr(api, "video_detect", detect)
+    response = client.post(
+        "/anonymize", files={"file": (filename, b"media")}, data={"replacewith": mode},
+    )
+
+    assert response.status_code == 200
+    assert calls[0]["replacewith"] == mode
+
+
+@pytest.mark.parametrize("mode", ["img", "unknown"])
+def test_rejects_unsupported_mode(mode):
+    response = client.post(
+        "/anonymize", files={"file": ("face.jpg", b"image")}, data={"replacewith": mode},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"] == ["body", "replacewith"]
 
 
 def test_rgba_png_preserves_transparency(monkeypatch):

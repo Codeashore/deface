@@ -5,6 +5,7 @@ import tempfile
 import threading
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -60,6 +61,7 @@ def anonymize(
     mask_scale: float = Form(1.3, ge=1.0, le=3.0),
     mosaic_size: int = Form(20, ge=2, le=200),
     keep_audio: bool = Form(False),
+    replacewith: Literal["mosaic", "blur", "solid", "none"] = Form("mosaic"),
 ):
     suffix = Path(file.filename or "").suffix.lower()
     if suffix in IMAGE_TYPES:
@@ -88,7 +90,7 @@ def anonymize(
                     opath=str(output_path),
                     centerface=detector,
                     threshold=threshold,
-                    replacewith="mosaic",
+                    replacewith=replacewith,
                     mask_scale=mask_scale,
                     ellipse=False,
                     draw_scores=False,
@@ -105,7 +107,7 @@ def anonymize(
                     enable_preview=False,
                     cam=False,
                     nested=False,
-                    replacewith="mosaic",
+                    replacewith=replacewith,
                     mask_scale=mask_scale,
                     ellipse=False,
                     draw_scores=False,

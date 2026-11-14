@@ -16,7 +16,8 @@ def process():
 
 
 @pytest.mark.parametrize("filename", ["photo.png", "clip.mov"])
-def test_web_uses_api_and_caches_download(process, monkeypatch, tmp_path, filename):
+@pytest.mark.parametrize("mode", ["mosaic", "blur", "solid", "none"])
+def test_web_uses_api_and_caches_download(process, monkeypatch, tmp_path, filename, mode):
     calls = []
 
     def detect(**kwargs):
@@ -29,14 +30,14 @@ def test_web_uses_api_and_caches_download(process, monkeypatch, tmp_path, filena
     source = tmp_path / filename
     source.write_bytes(b"input-media")
 
-    result = asyncio.run(process(str(source), 24, 0.3, 1.4, True))
+    result = asyncio.run(process(str(source), 24, 0.3, 1.4, True, mode))
     download = Path(result[2]["value"])
 
     assert download.read_bytes() == b"processed-media"
     assert download.name == f"{source.stem}_anonymized{'.mp4' if source.suffix == '.mov' else '.png'}"
     assert result[0]["visible"] is (source.suffix == ".png")
     assert result[1]["visible"] is (source.suffix == ".mov")
-    assert calls[0]["replacewith"] == "mosaic"
+    assert calls[0]["replacewith"] == mode
     assert calls[0]["mosaicsize"] == 24
     assert calls[0]["threshold"] == 0.3
     assert not Path(calls[0]["opath"]).exists()
